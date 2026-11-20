@@ -123,6 +123,7 @@ final class MenuBarController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         menu.addItem(login)
         menu.addItem(action("Open log", #selector(openLog)))
+        menu.addItem(action("About MacMXSwitch", #selector(showAbout)))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit MacMXSwitch", action: #selector(NSApp.terminate(_:)), keyEquivalent: "q"))
     }
@@ -177,6 +178,7 @@ final class MenuBarController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func openLog() { NSWorkspace.shared.open(logURL) }
+    @objc private func showAbout() { AboutWindow.shared.show() }
 
     @objc private func toggleLogin() {
         let svc = SMAppService.mainApp

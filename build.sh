@@ -12,7 +12,8 @@ VERSION=$(<VERSION)
 BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 1)
 APP=build/$NAME.app
 
-rm -rf build && mkdir -p $APP/Contents/MacOS
+rm -rf build && mkdir -p $APP/Contents/MacOS $APP/Contents/Resources
+cp Resources/AppIcon.icns Resources/Author.svg $APP/Contents/Resources/
 swiftc -O -target arm64-apple-macos$MIN_MACOS *.swift -o $APP/Contents/MacOS/$NAME
 cat > $APP/Contents/Info.plist <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -24,6 +25,8 @@ cat > $APP/Contents/Info.plist <<EOF
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>NSHumanReadableCopyright</key><string>© $(date +%Y) Miron Pawlik</string>
   <key>LSMinimumSystemVersion</key><string>$MIN_MACOS</string>
   <key>LSUIElement</key><true/>
   <key>NSBluetoothAlwaysUsageDescription</key><string>$NAME talks to your Logitech keyboard over Bluetooth to change its Easy-Switch channel.</string>

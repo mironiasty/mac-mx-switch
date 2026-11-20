@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="128" alt="MacMXSwitch icon">
+
 # MacMXSwitch
 
 A small macOS menu bar app that hands your desk over to another computer in one go:
@@ -32,6 +34,9 @@ This builds an ad-hoc signed `MacMXSwitch.app` (bundle ID `asia.miron.macmxswitc
 `~/Applications`, and restarts it if it was running. Because the build is ad-hoc signed, macOS may ask for Bluetooth
 again after a rebuild. For signed releases, see [RELEASING.md](RELEASING.md).
 
+The app icon is drawn by `scripts/make-icon.swift`; after changing it, run `scripts/make-icns.sh` to regenerate
+`Resources/AppIcon.icns` and `docs/icon.png`.
+
 ## Use
 
 Open **MacMXSwitch** and it stays in the menu bar. The menu has:
@@ -41,7 +46,7 @@ Open **MacMXSwitch** and it stays in the menu bar. The menu has:
 - **Switch monitor**: on/off, and **Monitor input**: HDMI 1/2, DisplayPort 1/2, USB-C or a custom value.
 - **Check devices**: reports current channels and input without switching.
 - **Open at login**: starts MacMXSwitch with your Mac (listed under System Settings > General > Login Items).
-- **Open log**, **Quit**.
+- **Open log**, **About MacMXSwitch**, **Quit**.
 
 Choices are saved. Opening the app again while it runs (Spotlight, Finder, or a Shortcuts "Open App" hotkey)
 switches right away. Nothing appears on success.
