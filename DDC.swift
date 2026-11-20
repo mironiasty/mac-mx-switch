@@ -25,14 +25,18 @@ enum DDC {
     static func externalServices() throws -> [CFTypeRef] {
         guard let create else { throw err("IOAVService API unavailable") }
         var iter: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceNameMatching("DCPAVServiceProxy"), &iter) == KERN_SUCCESS else {
+        guard
+            IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceNameMatching("DCPAVServiceProxy"), &iter)
+                == KERN_SUCCESS
+        else {
             throw err("cannot enumerate displays")
         }
         defer { IOObjectRelease(iter) }
         var out: [CFTypeRef] = []
         while case let s = IOIteratorNext(iter), s != 0 {
             defer { IOObjectRelease(s) }
-            let loc = IORegistryEntryCreateCFProperty(s, "Location" as CFString, kCFAllocatorDefault, 0)?
+            let loc =
+                IORegistryEntryCreateCFProperty(s, "Location" as CFString, kCFAllocatorDefault, 0)?
                 .takeRetainedValue() as? String
             guard loc == "External", let av = create(kCFAllocatorDefault, s) else { continue }
             out.append(av.takeRetainedValue())
