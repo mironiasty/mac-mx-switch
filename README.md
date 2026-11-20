@@ -52,10 +52,12 @@ written to `~/Library/Logs/MacMXSwitch.log`.
 
 ### Command line
 
-For a one-off run without the menu bar, pass options (these ignore the saved menu settings):
+For a one-off run without the menu bar, pass options (these ignore the saved menu settings). Use `open -n`: without
+it, if the menu bar app is already running, `open` just reopens it, which switches with the saved settings and
+ignores the options.
 
 ```sh
-open ~/Applications/MacMXSwitch.app --args --host 2 --input 15
+open -n ~/Applications/MacMXSwitch.app --args --host 2 --input 15
 # or, to see output and answer prompts in the terminal:
 ~/Applications/MacMXSwitch.app/Contents/MacOS/MacMXSwitch --host 2 --input 15
 ```
