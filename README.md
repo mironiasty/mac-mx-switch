@@ -9,18 +9,22 @@ Before switching, it checks that every device is reachable. If any of them fails
 
 ## Requirements
 
-- macOS on Apple Silicon (the DDC code relies on Apple Silicon display services)
+- macOS 13 or later on Apple Silicon (the DDC code relies on Apple Silicon display services)
 - Xcode Command Line Tools (`swiftc`)
 - Logitech MX Keys and/or MX Master 4 paired over **Bluetooth** (not the Bolt/Unifying receiver)
 - An external monitor that supports DDC/CI input switching
 
-## Build & install
+## Install
+
+Download `MacMXSwitch-<version>.zip` from [Releases](https://github.com/mironiasty/mac-mx-switch/releases), unzip, and move `MacMXSwitch.app` to `/Applications` or `~/Applications`. Release builds are signed with a Developer ID and notarized by Apple.
+
+## Build from source
 
 ```sh
 ./build.sh
 ```
 
-This compiles `main.swift` + `DDC.swift`, wraps them in an ad-hoc signed `MacMXSwitch.app` (bundle ID `asia.miron.macmxswitch`), and installs it to `~/Applications`.
+This compiles `main.swift` + `DDC.swift`, wraps them in an ad-hoc signed `MacMXSwitch.app` (bundle ID `asia.miron.macmxswitch`), and installs it to `~/Applications`. For signed releases, see [RELEASING.md](RELEASING.md).
 
 ## Usage
 

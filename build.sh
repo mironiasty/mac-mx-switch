@@ -1,25 +1,42 @@
 #!/bin/zsh
-# Builds MacMXSwitch.app (ad-hoc signed) and installs it to ~/Applications.
+# Builds MacMXSwitch.app.
+#   ./build.sh            dev build: ad-hoc signed, installed to ~/Applications
+#   ./build.sh --release  unsigned release bundle in build/ (signed by release.sh)
 set -e
 cd "${0:A:h}"
-APP=build/MacMXSwitch.app
+
+NAME=MacMXSwitch
+BUNDLE_ID=asia.miron.macmxswitch
+MIN_MACOS=13.0
+VERSION=$(<VERSION)
+BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 1)
+APP=build/$NAME.app
+
 rm -rf build && mkdir -p $APP/Contents/MacOS
-swiftc -O main.swift DDC.swift -o $APP/Contents/MacOS/MacMXSwitch
-cat > $APP/Contents/Info.plist <<'EOF'
+swiftc -O -target arm64-apple-macos$MIN_MACOS main.swift DDC.swift -o $APP/Contents/MacOS/$NAME
+cat > $APP/Contents/Info.plist <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>CFBundleIdentifier</key><string>asia.miron.macmxswitch</string>
-  <key>CFBundleName</key><string>MacMXSwitch</string>
-  <key>CFBundleExecutable</key><string>MacMXSwitch</string>
+  <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
+  <key>CFBundleName</key><string>$NAME</string>
+  <key>CFBundleExecutable</key><string>$NAME</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
+  <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>
+  <key>LSMinimumSystemVersion</key><string>$MIN_MACOS</string>
   <key>LSUIElement</key><true/>
-  <key>NSBluetoothAlwaysUsageDescription</key><string>MacMXSwitch talks to your Logitech keyboard over Bluetooth to change its Easy-Switch channel.</string>
+  <key>NSBluetoothAlwaysUsageDescription</key><string>$NAME talks to your Logitech keyboard over Bluetooth to change its Easy-Switch channel.</string>
 </dict></plist>
 EOF
-codesign --force --sign - --identifier asia.miron.macmxswitch $APP
+
+if [[ $1 == --release ]]; then
+  echo "Built unsigned $APP ($VERSION, build $BUILD_NUMBER)"
+  exit 0
+fi
+
+codesign --force --sign - --identifier $BUNDLE_ID $APP
 mkdir -p ~/Applications
-rm -rf ~/Applications/MacMXSwitch.app
+rm -rf ~/Applications/$NAME.app
 cp -R $APP ~/Applications/
-echo "Installed ~/Applications/MacMXSwitch.app"
+echo "Installed ~/Applications/$NAME.app"
