@@ -260,7 +260,41 @@ func hidDevice(_ name: String) -> IOHIDDevice? {
 
 var ok = true
 // Phase 1: query everything. Phase 2: switch only if all of it is ready.
+// Peripheral failures block everything; monitor failures ask the user first.
 var ready: [(Transport, UInt8, String)] = []
+var monitorProblems: [String] = []
+var askedUser = false
+
+func activateForDialog() {
+    NSApplication.shared.setActivationPolicy(.accessory)
+    NSApp.activate(ignoringOtherApps: true)
+}
+
+/// Ask whether to switch keyboard/mouse although the monitor can't be switched.
+func confirmWithoutMonitor(_ problems: [String]) -> Bool {
+    askedUser = true
+    let question = "The monitor can't be switched:\n" + problems.map { "• " + $0 }.joined(separator: "\n")
+        + "\n\nSwitch keyboard and mouse to channel \(targetHost) anyway? The monitor will keep showing this Mac."
+    if launchedFromFinder {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Monitor not switched"
+        alert.informativeText = question
+        // Cancel is the default (first) button: if the dialog can't be shown, or the user
+        // just hits Return, nothing switches. Only an explicit click on the second button proceeds.
+        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "Switch Keyboard & Mouse")
+        activateForDialog()
+        return alert.runModal() == .alertSecondButtonReturn
+    }
+    guard isatty(STDIN_FILENO) != 0 else {
+        print(question + "\n(not a terminal; not switching. Use --no-monitor to skip the monitor.)")
+        return false
+    }
+    print(question + " [y/N] ", terminator: "")
+    fflush(stdout)
+    return readLine()?.trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("y") == true
+}
 
 var displays: [CFTypeRef] = []
 if let input = monitorInput {
@@ -270,7 +304,12 @@ if let input = monitorInput {
             let cur = (try? DDC.getVCP(av, DDC.vcpInput)).map(String.init) ?? "unknown"
             say("Monitor \(i + 1): input \(cur) (target \(input))")
         }
-    } catch { ok = false; say("Monitor: failed: \((error as NSError).domain)") }
+    } catch {
+        let msg = (error as NSError).domain
+        monitorProblems.append(msg)
+        if monitorOnly { ok = false }
+        say("Monitor: failed: \(msg)")
+    }
 }
 
 let ble = monitorOnly ? nil : BLE()
@@ -304,11 +343,24 @@ if dryRun {
 } else if !ok {
     say("Not switching anything because a device failed.")
 } else {
-    // Monitor first: if it fails we still have keyboard + mouse here to see the error.
+    // Monitor first: if it fails we still have keyboard + mouse here to answer the prompt.
     if let input = monitorInput {
         for (i, av) in displays.enumerated() {
             do { try DDC.setVCP(av, DDC.vcpInput, input); say("Monitor \(i + 1) -> input \(input)") }
-            catch { ok = false; say("Monitor \(i + 1): switch failed: \((error as NSError).domain)") }
+            catch {
+                let msg = "Monitor \(i + 1): switch failed: \((error as NSError).domain)"
+                monitorProblems.append(msg)
+                if monitorOnly { ok = false }
+                say(msg)
+            }
+        }
+    }
+    if !monitorProblems.isEmpty && !ready.isEmpty {
+        if confirmWithoutMonitor(monitorProblems) {
+            say("Switching keyboard and mouse without the monitor (confirmed).")
+        } else {
+            ok = false
+            say("Cancelled: nothing else switched.")
         }
     }
     for (t, idx, name) in ok ? ready : [] {
@@ -328,13 +380,13 @@ try? (["[\(stamp)] args=\(CommandLine.arguments.dropFirst().joined(separator: " 
     .joined(separator: "\n").appending("\n")
     .write(to: logURL, atomically: true, encoding: .utf8)
 
-// When launched from Finder/Spotlight, only show a dialog if something went wrong (or dry run).
-if launchedFromFinder && (!ok || dryRun) {
+// When launched from Finder/Spotlight, only show a dialog if something went wrong (or dry run),
+// and not right after the user already answered the monitor question.
+if launchedFromFinder && (!ok || dryRun) && !askedUser {
     let alert = NSAlert()
     alert.messageText = "MacMXSwitch"
     alert.informativeText = log.joined(separator: "\n")
-    NSApplication.shared.setActivationPolicy(.accessory)
-    NSApp.activate(ignoringOtherApps: true)
+    activateForDialog()
     alert.runModal()
 }
 exit(ok ? 0 : 1)
